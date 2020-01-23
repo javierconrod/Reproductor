@@ -35,6 +35,8 @@ namespace Reproductor
         //Comunicacion con la tarjeta de audio
         //exclusivo para salidas
         WaveOut output;
+
+        bool dragging = false;
         public MainWindow()
         {
             InitializeComponent();
@@ -52,15 +54,18 @@ namespace Reproductor
         private void Timer_Tick(object sender, EventArgs e)
         {
             lblTiempoActual.Text = reader.CurrentTime.ToString().Substring(0, 8);
-            sldReproduccion.Value = reader.CurrentTime.TotalSeconds;
+            if(!dragging)
+            {
+                sldReproduccion.Value = reader.CurrentTime.TotalSeconds;
+            }
         }
 
         void ListarDispositivosSalida()
         {
             cbDispositivoSalida.Items.Clear();
-            for(int i = 0; i < WaveOut.DeviceCount; i++)
+            for (int i = 0; i < WaveOut.DeviceCount; i++)
             {
-                WaveOutCapabilities capacidades =  WaveOut.GetCapabilities(i);
+                WaveOutCapabilities capacidades = WaveOut.GetCapabilities(i);
                 cbDispositivoSalida.Items.Add(capacidades.ProductName);
             }
             cbDispositivoSalida.SelectedIndex = 0;
@@ -79,7 +84,7 @@ namespace Reproductor
 
         private void btnReproducir_Click(object sender, RoutedEventArgs e)
         {
-            if(output != null && output.PlaybackState == PlaybackState.Paused)
+            if (output != null && output.PlaybackState == PlaybackState.Paused)
             {
                 //retomar la reproducción
                 output.Play();
@@ -95,7 +100,7 @@ namespace Reproductor
                     output.Init(reader);
                     output.Play();
 
-                    lblTiempoTotal.Text = reader.TotalTime.ToString().Substring(0,8);
+                    lblTiempoTotal.Text = reader.TotalTime.ToString().Substring(0, 8);
                     lblTiempoActual.Text = reader.CurrentTime.ToString().Substring(0, 8);
 
                 }
@@ -119,7 +124,7 @@ namespace Reproductor
 
         private void btnPausa_Click(object sender, RoutedEventArgs e)
         {
-            if(output != null)
+            if (output != null)
             {
                 output.Pause();
                 btnReproducir.IsEnabled = true;
@@ -130,7 +135,7 @@ namespace Reproductor
 
         private void btnDetener_Click(object sender, RoutedEventArgs e)
         {
-            if(output != null)
+            if (output != null)
             {
                 output.Stop();
                 btnReproducir.IsEnabled = true;
@@ -138,5 +143,17 @@ namespace Reproductor
                 btnPausa.IsEnabled = false;
             }
         }
-    }
+        private void SldTiempo_DragStarted(object sender, RoutedEventArgs e)
+        {
+            dragging = true;
+        }
+       private void SldTiempo_DragCompleted(object sender, RoutedEventArgs e)
+       {
+            dragging = false;
+            if(reader != null && output != null && output.PlaybackState != PlaybackState.Stopped)
+            {
+                reader.CurrentTime = TimeSpan.FromSeconds(sldReproduccion.Value);
+            }
+       }
+}
 }
